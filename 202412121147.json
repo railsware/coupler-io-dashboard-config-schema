@@ -1,0 +1,820 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "202412121147",
+  "$defs": {
+    "layout": {
+      "type": "object",
+      "description": "Grid layout options.",
+      "properties": {
+        "cols": {
+          "type": "object",
+          "description": "Grid columns per breakpoint.\nKey: breakpoint name. Value: the number of columns in the grid.",
+          "patternProperties": {
+            "^[a-zA-Z]+$": {
+              "type": "integer"
+            }
+          },
+          "default": { "lg": 12, "xs": 6 }
+        },
+        "rowHeight": {
+          "type": "integer",
+          "description": "Grid row height in pixels.",
+          "default": 100
+        },
+        "breakpoints": {
+          "type": "object",
+          "description": "Grid breakpoints to screen width for responsive layouts.\nKey: breakpoint name. Value: screen width in pixels.",
+          "examples": [{ "lg": 1200, "xs": 800 }],
+          "patternProperties": {
+            "^[a-zA-Z]+$": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "required": ["cols", "rowHeight", "breakpoints"],
+      "additionalProperties": false
+    },
+    "grid": {
+      "type": "object",
+      "description": "Controls component placement in the grid.",
+      "patternProperties": {
+        "^[a-zA-Z]+$": {
+          "type": "object",
+          "properties": {
+            "h": {
+              "type": "number",
+              "description": "The height of the component as a multiple of `rowHeight`.",
+              "default": 1
+            },
+            "w": {
+              "type": "integer",
+              "description": "The width of the component expressed as the number of columns it spans across.",
+              "default": 1
+            },
+            "x": {
+              "type": "integer",
+              "description": "The X coordinate of the component in the grid.",
+              "default": 0
+            },
+            "y": {
+              "type": "integer",
+              "description": "The Y coordinate of the component in the grid.",
+              "default": 0
+            },
+            "static": {
+              "type": "boolean",
+              "description": "Controls drag-n-drop and resizing. If true,\nequal to `isDraggable: false, isResizable: false`.",
+              "default": true
+            }
+          },
+          "required": ["h", "w", "x", "y", "static"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "baseComponent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the component. Has to be unique. Auto-generated, unless provided explicitly."
+        },
+        "title": {
+          "type": "string",
+          "description": "Component title.",
+          "examples": ["My Chart"]
+        },
+        "dateRangeColumn": {
+          "type": "string",
+          "description": "The `key` of the column in the transformation schema that would be used for the date range filtering.\nIf not defined, date range filter does not apply.",
+          "examples": ["Report date.0"]
+        }
+      },
+      "required": ["id"]
+    },
+    "commonComponent": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/baseComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "grid": {
+              "$ref": "#/$defs/grid"
+            }
+          },
+          "required": ["grid"]
+        }
+      ]
+    },
+    "query": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array"
+        },
+        "filter": {
+          "type": "array"
+        },
+        "dimensions": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "required": ["metrics"]
+    },
+    "insights": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/baseComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "insights"
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  }
+                },
+                "required": ["query"]
+              }
+            },
+            "columnDefs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "headerName": {
+                    "type": "string"
+                  },
+                  "valueFormatter": {
+                    "type": "string",
+                    "description": "Expression to format the value, should return a string.\nSee https://www.ag-grid.com/archive/31.0.2/react-data-grid/column-properties/#reference-columns-valueFormatter",
+                    "examples": [
+                      "value?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })"
+                    ]
+                  },
+                  "format": {
+                    "$ref": "#/$defs/formatProperties"
+                  }
+                },
+                "required": [
+                  "headerName"
+                ]
+              }
+            }
+          },
+          "required": ["prompt", "series", "columnDefs"]
+        }
+      ]
+    },
+    "scorecard": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "scorecard"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  }
+                },
+                "required": ["query"]
+              }
+            },
+            "format": {
+              "$ref": "#/$defs/formatProperties"
+            },
+            "valueFormat": {
+              "enum": ["compactNumber", "currency", "decimalInteger", "percent", "duration"],
+              "description": "Value format. If not set, will render the value as-is."
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "chart": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "chart"
+            },
+            "xAxis": {
+              "type": "object",
+              "description": "X axis config. For now only a single X axis is supported.\nSee https://api.highcharts.com/highcharts/xAxis",
+              "properties": {
+                "type": {
+                  "enum": ["category", "datetime", "linear", "logarithmic"],
+                  "default": "linear"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "array",
+              "description": "Y axes config.\nSee https://api.highcharts.com/highcharts/yAxis",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "The ID of the axis. This is used to map series to a specific axis in case there are multiple."
+                  },
+                  "title": {
+                    "type": "object",
+                    "properties": {
+                      "text": {
+                        "description": "Y axis title text. Pass `null` to hide it.",
+                        "type": ["string", "null"]
+                      }
+                    }
+                  },
+                  "labels": {
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "description": "See https://api.highcharts.com/highcharts/yAxis.labels.format",
+                        "examples": ["${value:.2f}"]
+                      }
+                    }
+                  },
+                  "opposite": {
+                    "type": "boolean",
+                    "description": "Whether to display the axis on the opposite side of the normal.\nThe normal is on the left side for vertical axes and bottom for horizontal, so the opposite sides will be right and top respectively.\nThis is typically used with dual or multiple axes.\nSee https://api.highcharts.com/highcharts/yAxis.opposite",
+                    "default": false
+                  }
+                },
+                "required": ["id"]
+              }
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The name of the series as shown in the legend, tooltip etc. See e.g. https://api.highcharts.com/highcharts/series.line.name"
+                  },
+                  "type": {
+                    "enum": ["line", "column"],
+                    "description": "Set series type if the chart is a combination of different series types. See https://www.highcharts.com/docs/chart-and-series-types/combining-chart-types"
+                  },
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  },
+                  "yAxis": {
+                    "type": "string",
+                    "description": "The ID of the Y axis from the definition."
+                  },
+                  "tooltip": {
+                    "type": "object",
+                    "properties": {
+                      "pointFormatString": {
+                        "type": "string",
+                        "description": "Shortcut for tooltip point formatting within the default tooltip template.",
+                        "examples": ["${point.y:.2f}"]
+                      },
+                      "pointFormat": {
+                        "type": "string",
+                        "description": "The full tooltip point formatting template. See https://api.highcharts.com/highcharts/tooltip.pointFormat"
+                      }
+                    }
+                  },
+                  "colorIndex": {
+                    "type": "integer",
+                    "description": "A specific color index to use for the series, so its graphic representations are given the class name highcharts-color-{n}. See e.g. https://api.highcharts.com/highcharts/series.line.colorIndex",
+                    "minimum": 0
+                  },
+                  "format": {
+                    "$ref": "#/$defs/formatProperties"
+                  }
+                },
+                "required": ["type", "query"]
+              }
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "gauge": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "gauge"
+            },
+            "xAxis": {
+              "type": "object",
+              "description": "X axis config. For now only a single X axis is supported.\nSee https://api.highcharts.com/highcharts/xAxis",
+              "properties": {
+                "type": {
+                  "enum": ["category", "datetime", "linear", "logarithmic"],
+                  "default": "linear"
+                }
+              }
+            },
+            "yAxis": {
+              "description": "Y axes config.\nSee https://api.highcharts.com/highcharts/yAxis",
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/yAxis"
+                  }
+                },
+                {
+                  "$ref": "#/$defs/yAxis"
+                }
+              ]
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The name of the series as shown in the legend, tooltip etc. See e.g. https://api.highcharts.com/highcharts/series.line.name"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Set series type if the chart is a combination of different series types. See https://www.highcharts.com/docs/chart-and-series-types/combining-chart-types"
+                  },
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  },
+                  "yAxis": {
+                    "type": "string",
+                    "description": "The ID of the Y axis from the definition."
+                  },
+                  "tooltip": {
+                    "type": "object",
+                    "properties": {
+                      "pointFormatString": {
+                        "type": "string",
+                        "description": "Shortcut for tooltip point formatting within the default tooltip template.",
+                        "examples": ["${point.y:.2f}"]
+                      },
+                      "pointFormat": {
+                        "type": "string",
+                        "description": "The full tooltip point formatting template. See https://api.highcharts.com/highcharts/tooltip.pointFormat"
+                      }
+                    }
+                  },
+                  "colorIndex": {
+                    "type": "integer",
+                    "description": "A specific color index to use for the series, so its graphic representations are given the class name highcharts-color-{n}. See e.g. https://api.highcharts.com/highcharts/series.line.colorIndex",
+                    "minimum": 0
+                  }
+                },
+                "required": ["query"]
+              }
+            },
+            "format": {
+              "$ref": "#/$defs/formatProperties"
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "funnel": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "funnel"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The name of the series as shown in the legend, tooltip etc. See e.g. https://api.highcharts.com/highcharts/series.line.name"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Set series type if the chart is a combination of different series types. See https://www.highcharts.com/docs/chart-and-series-types/combining-chart-types"
+                  },
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  }
+                },
+                "required": ["query"]
+              }
+            },
+            "format": {
+              "$ref": "#/$defs/formatProperties"
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "pie-chart": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "const": "pie-chart" },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  }
+                },
+                "required": ["query"]
+              }
+            },
+            "format": {
+              "$ref": "#/$defs/formatProperties"
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "table": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "const": "table" },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  }
+                },
+                "required": ["query"]
+              }
+            },
+            "columnDefs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "headerName": {
+                    "type": "string"
+                  },
+                  "valueGetter": {
+                    "type": "string",
+                    "description": "Expression to get the value from the row. \nSee https://www.ag-grid.com/archive/31.0.2/react-data-grid/value-getters/ \nand https://www.ag-grid.com/archive/31.0.2/react-data-grid/cell-expressions/#variables-to-expressions",
+                    "examples": ["data[0]"]
+                  },
+                  "valueFormatter": {
+                    "type": "string",
+                    "description": "Expression to format the value, should return a string.\nSee https://www.ag-grid.com/archive/31.0.2/react-data-grid/column-properties/#reference-columns-valueFormatter",
+                    "examples": ["value?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })"]
+                  },
+                  "format": {
+                    "$ref": "#/$defs/formatProperties"
+                  },
+                  "sort": {
+                    "type": "string",
+                    "description": "Default client-side sort direction for the column.",
+                    "enum": ["asc", "desc", "null"],
+                    "examples": ["asc", "desc"]
+                  }
+                }
+              }
+            }
+          },
+          "required": ["type", "series", "columnDefs"]
+        }
+      ]
+    },
+    "bar-chart": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "const": "bar-chart" },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  },
+                  "stacking": {
+                    "enum": ["normal", "overlap", "percent", "stream"],
+                    "description": "Whether to stack the values of each series on top of each other. See https://api.highcharts.com/highcharts/series.column.stacking"
+                  }
+                },
+                "required": ["query"]
+              }
+            },
+            "tooltip": {
+              "type": "object",
+              "properties": {
+                "pointFormatString": {
+                  "type": "string",
+                  "description": "Shortcut for tooltip point formatting within the default tooltip template.",
+                  "examples": ["${point.y:.2f}"]
+                }
+              }
+            },
+            "aggregationPeriod": { "enum": ["daily", "weekly", "monthly", "yearly"] },
+            "colorIndexes": {
+              "type": "array",
+              "description": "Color indexes from the default palette to rotate between. The position in the array determines the series it applies to. If not set, series color is picked from the full default color palette in the default order.",
+              "items": {
+                "type": "integer"
+              },
+              "examples": [[0, 1, 2, 3, 4, 5]]
+            },
+            "format": {
+              "$ref": "#/$defs/formatProperties"
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "map": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "const": "map" },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  },
+                  "colorIndex": { "type": "integer", "minimum": 0 }
+                },
+                "required": ["query"]
+              }
+            },
+            "format": {
+              "$ref": "#/$defs/formatProperties"
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "yAxis": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the axis. This is used to map series to a specific axis in case there are multiple."
+        },
+        "title": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "description": "Y axis title text. Pass `null` to hide it.",
+              "type": ["string", "null"]
+            }
+          }
+        },
+        "labels": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "description": "See https://api.highcharts.com/highcharts/yAxis.labels.format",
+              "examples": ["${value:.2f}"]
+            }
+          }
+        },
+        "opposite": {
+          "type": "boolean",
+          "description": "Whether to display the axis on the opposite side of the normal.\nThe normal is on the left side for vertical axes and bottom for horizontal, so the opposite sides will be right and top respectively.\nThis is typically used with dual or multiple axes.\nSee https://api.highcharts.com/highcharts/yAxis.opposite",
+          "default": false
+        },
+        "max": {
+          "type": "number"
+        },
+        "min": {
+          "type": "number"
+        }
+      }
+    },
+    "funnel": {
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "funnel"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The name of the series as shown in the legend, tooltip etc. See e.g. https://api.highcharts.com/highcharts/series.line.name"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "Set series type if the chart is a combination of different series types. See https://www.highcharts.com/docs/chart-and-series-types/combining-chart-types"
+                  },
+                  "query": {
+                    "$ref": "#/$defs/query"
+                  }
+                },
+                "required": ["query"]
+              }
+            }
+          },
+          "required": ["type", "series"]
+        }
+      ]
+    },
+    "header": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/commonComponent" },
+        {
+          "type": "object",
+          "description": "Header component.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "header"
+            },
+            "justify": {
+              "enum": ["center", "start", "end", "flex-start", "flex-end", "left", "right", "normal", "space-between", "space-around", "space-evenly", "stretch", "safe center", "unsafe center", "inherit", "initial", "unset", "revert", "revert-layer"],
+              "default": "left",
+              "description": "See https://developer.mozilla.org/en-US/docs/Web/CSS/justify-content"
+            }
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "formatProperties": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["number", "currency", "percent", "duration"],
+          "description": "The type of format to apply."
+        },
+        "options": {
+          "$ref": "#/$defs/formatOptions"
+        }
+      },
+      "required": ["type", "options"],
+      "additionalProperties": false
+    },
+    "formatOptions": {
+      "type": "object",
+      "properties": {
+        "precision": {
+          "type": "integer",
+          "description": "Number of decimal places for the value.",
+          "default": 0
+        },
+        "compact": {
+          "type": "boolean",
+          "description": "Whether to use compact notation (e.g., 1K instead of 1000)."
+        },
+        "currency": {
+          "type": "string",
+          "description": "Default currency for the dashboard.",
+          "default": "USD"
+        },
+        "locale": {
+          "type": "string",
+          "description": "Locale preferences, affecting regional conventions such as date formats and language.",
+          "default": "en-US"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9\\-]{4,}$",
+      "minLength": 4,
+      "examples": ["2024-12-01"],
+      "description": "Config version."
+    },
+    "layout": {
+      "$ref": "#/$defs/layout"
+    },
+    "insights": {
+      "type": "array",
+      "description": "Components to use for insights.",
+      "items": { "$ref": "#/$defs/insights" }
+    },
+    "components": {
+      "type": "array",
+      "description": "Components to render on the dashboard.",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/scorecard" },
+          { "$ref": "#/$defs/chart" },
+          { "$ref": "#/$defs/pie-chart" },
+          { "$ref": "#/$defs/table" },
+          { "$ref": "#/$defs/bar-chart" },
+          { "$ref": "#/$defs/map" },
+          { "$ref": "#/$defs/gauge" },
+          { "$ref": "#/$defs/funnel" },
+          { "$ref": "#/$defs/header" }
+        ]
+      }
+    },
+    "dateRangeFilter": {
+      "type": "object",
+      "description": "Date range filter options.",
+      "properties": {
+        "disabled": {
+          "type": "boolean",
+          "description": "Whether the date range filter is disabled.",
+          "default": false
+        },
+        "daysInThePast": {
+          "type": "integer",
+          "description": "The number of days in the past to show data for.",
+          "default": 31
+        }
+      }
+    },
+    "rowFilterDisabled": {
+      "type": "boolean",
+      "description": "Whether the row filter is disabled.",
+      "default": false
+    },
+    "globalSettings": {
+      "type": "object",
+      "description": "Global settings for the dashboard.",
+      "properties": {
+        "format": {
+          "$ref": "#/$defs/formatOptions"
+        }
+      }
+    }
+  },
+  "required": ["schemaVersion", "layout", "components"]
+}
