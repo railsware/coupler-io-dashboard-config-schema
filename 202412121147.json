@@ -135,7 +135,7 @@
               "type": "string",
               "const": "insights"
             },
-            "prompt": {
+            "langfusePrompt": {
               "type": "string"
             },
             "series": {
@@ -175,7 +175,7 @@
               }
             }
           },
-          "required": ["prompt", "series", "columnDefs"]
+          "required": ["langfusePrompt", "series", "columnDefs"]
         }
       ]
     },
