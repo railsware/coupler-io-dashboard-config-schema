@@ -408,44 +408,6 @@
         }
       ]
     },
-    "funnel": {
-      "allOf": [
-        { "$ref": "#/$defs/commonComponent" },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "const": "funnel"
-            },
-            "series": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "description": "The name of the series as shown in the legend, tooltip etc. See e.g. https://api.highcharts.com/highcharts/series.line.name"
-                  },
-                  "type": {
-                    "type": "string",
-                    "description": "Set series type if the chart is a combination of different series types. See https://www.highcharts.com/docs/chart-and-series-types/combining-chart-types"
-                  },
-                  "query": {
-                    "$ref": "#/$defs/query"
-                  }
-                },
-                "required": ["query"]
-              }
-            },
-            "format": {
-              "$ref": "#/$defs/formatProperties"
-            }
-          },
-          "required": ["type", "series"]
-        }
-      ]
-    },
     "pie-chart": {
       "allOf": [
         { "$ref": "#/$defs/commonComponent" },
@@ -463,6 +425,10 @@
                   },
                   "query": {
                     "$ref": "#/$defs/query"
+                  },
+                  "displayLimit": {
+                    "type": "integer",
+                    "description": "The number of slices to display in the chart. After that limit, we will show one last slice with the name 'Others' that will contain the rest of the data."
                   }
                 },
                 "required": ["query"]
@@ -554,6 +520,20 @@
                   "stacking": {
                     "enum": ["normal", "overlap", "percent", "stream"],
                     "description": "Whether to stack the values of each series on top of each other. See https://api.highcharts.com/highcharts/series.column.stacking"
+                  },
+                  "sortOrder": {
+                    "enum": ["asc", "desc"],
+                    "description": "The order of the series in the chart.",
+                    "default": "desc"
+                  },
+                  "sortBy": {
+                    "enum": ["name", "value"],
+                    "description": "The field to sort the series by.",
+                    "default": "value"
+                  },
+                  "displayLimit": {
+                    "type": "integer",
+                    "description": "The number of series to display in the chart. After that limit, we will show one last slice with the name 'Others' that will contain the rest of the data."
                   }
                 },
                 "required": ["query"]
@@ -679,6 +659,11 @@
                   },
                   "query": {
                     "$ref": "#/$defs/query"
+                  },
+                  "calculatePercentagesFromFirstStep": {
+                    "type": "boolean",
+                    "description": "Whether to calculate percentages from the first step.",
+                    "default": false
                   }
                 },
                 "required": ["query"]
@@ -785,6 +770,46 @@
         ]
       }
     },
+    "tabs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the tab"
+          },
+          "layout": {
+            "$ref": "#/$defs/layout"
+          },
+          "insights": {
+            "type": "array",
+            "description": "Components to use for insights.",
+            "items": { "$ref": "#/$defs/insights" }
+          },
+          "components": {
+            "type": "array",
+            "description": "Components to render on the dashboard.",
+            "items": {
+              "oneOf": [
+                { "$ref": "#/$defs/scorecard" },
+                { "$ref": "#/$defs/chart" },
+                { "$ref": "#/$defs/pie-chart" },
+                { "$ref": "#/$defs/table" },
+                { "$ref": "#/$defs/bar-chart" },
+                { "$ref": "#/$defs/map" },
+                { "$ref": "#/$defs/gauge" },
+                { "$ref": "#/$defs/funnel" },
+                { "$ref": "#/$defs/header" }
+              ]
+            }
+          }
+        },
+        "required": ["title", "layout", "components"],
+        "additionalProperties": false
+      }
+    },
     "dateRangeFilter": {
       "type": "object",
       "description": "Date range filter options.",
@@ -798,7 +823,18 @@
           "type": "integer",
           "description": "The number of days in the past to show data for.",
           "default": 31
+        },
+        "monthsInThePast": {
+          "type": "integer",
+          "description": "The number of months in the past to show data for. Needs precision to be specified."
+        },
+        "precision": {
+          "enum": ["fullToFull", "fullToDate", "dateToDate"],
+          "description": "Precision of the date range to be applied for data filtering:\nfullToFull - from the first day of 'n' last month to last day of last month,\nfullToDate - from the first day of 'n' last month to today,\ndateToDate - from day 'n' months ago to today"
         }
+      },
+      "dependentRequired": {
+        "monthsInThePast": ["precision"]
       }
     },
     "rowFilterDisabled": {
@@ -816,5 +852,13 @@
       }
     }
   },
-  "required": ["schemaVersion", "layout", "components"]
+  "required": ["schemaVersion"],
+  "oneOf": [
+    {
+      "required": ["layout", "components"]
+    },
+    {
+      "required": ["tabs"]
+    }
+  ]
 }
