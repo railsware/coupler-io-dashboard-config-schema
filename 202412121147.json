@@ -425,6 +425,10 @@
                   },
                   "query": {
                     "$ref": "#/$defs/query"
+                  },
+                  "displayLimit": {
+                    "type": "integer",
+                    "description": "The number of slices to display in the chart. After that limit, we will show one last slice with the name 'Others' that will contain the rest of the data."
                   }
                 },
                 "required": ["query"]
@@ -526,6 +530,10 @@
                     "enum": ["name", "value"],
                     "description": "The field to sort the series by.",
                     "default": "value"
+                  },
+                  "displayLimit": {
+                    "type": "integer",
+                    "description": "The number of series to display in the chart. After that limit, we will show one last slice with the name 'Others' that will contain the rest of the data."
                   }
                 },
                 "required": ["query"]
@@ -651,6 +659,11 @@
                   },
                   "query": {
                     "$ref": "#/$defs/query"
+                  },
+                  "calculatePercentagesFromFirstStep": {
+                    "type": "boolean",
+                    "description": "Whether to calculate percentages from the first step.",
+                    "default": false
                   }
                 },
                 "required": ["query"]
