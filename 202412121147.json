@@ -449,6 +449,29 @@
           "type": "object",
           "properties": {
             "type": { "type": "string", "const": "table" },
+            "pivot": {
+              "oneOf": [
+                {
+                  "type": "boolean",
+                  "const": true
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "hideCount": {
+                      "type": "boolean",
+                      "description": "Whether to hide the aggregation count.",
+                      "default": true
+                    },
+                    "defaultExpanded": {
+                      "type": "integer",
+                      "description": "Whether to expand the aggregated rows/columns by default.\n See https://www.ag-grid.com/archive/31.0.2/react-data-grid/grid-options/#reference-rowPivoting-pivotDefaultExpanded",
+                      "default": -1
+                    }
+                  }
+                }
+              ]
+            },
             "series": {
               "type": "array",
               "items": {
@@ -487,6 +510,40 @@
                     "description": "Default client-side sort direction for the column.",
                     "enum": ["asc", "desc", "null"],
                     "examples": ["asc", "desc"]
+                  },
+                  "filter": {
+                    "type": "string",
+                    "description": "When set there will be a sidebar with filters and the column will be filtered using the specified filter type.\nSee https://www.ag-grid.com/archive/31.0.2/react-data-grid/filtering/#column-filter-types",
+                    "enum": ["agTextColumnFilter", "agNumberColumnFilter", "agDateColumnFilter", "agSetColumnFilter", "agMultiColumnFilter"]
+                  },
+                  "rowGroup": {
+                    "type": "boolean",
+                    "description": "Whether to group the column."
+                  },
+                  "pivot": {
+                    "type": "boolean",
+                    "description": "Whether to pivot the column."
+                  },
+                  "aggFunc": {
+                    "type": "string",
+                    "description": "Client-side aggregation function for the column. See https://www.ag-grid.com/archive/31.0.2/react-data-grid/column-properties/#reference-grouping-aggFunc",
+                    "enum": ["sum", "avg", "min", "max", "count", "percentageSum"]
+                  },
+                  "aggData": {
+                    "type": "object",
+                    "properties": {
+                      "numeratorGetter": {
+                        "type": "string",
+                        "description": "Expression to get the numerator value for the percentage calculation, similar to the valueGetter.",
+                        "examples": ["data[1]"]
+                      },
+                      "denominatorGetter": {
+                        "type": "string",
+                        "description": "Expression to get the denominator value for the percentage calculation, similar to the valueGetter.",
+                        "examples": ["data[2]"]
+                      }
+                    },
+                    "required": ["numeratorGetter", "denominatorGetter"]
                   }
                 }
               }
