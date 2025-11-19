@@ -108,6 +108,30 @@
         }
       ]
     },
+    "columnDefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "headerName": {
+            "type": "string"
+          },
+          "valueFormatter": {
+            "type": "string",
+            "description": "Expression to format the value, should return a string.\nSee https://www.ag-grid.com/archive/31.0.2/react-data-grid/column-properties/#reference-columns-valueFormatter",
+            "examples": [
+              "value?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })"
+            ]
+          },
+          "format": {
+            "$ref": "#/$defs/formatProperties"
+          }
+        },
+        "required": [
+          "headerName"
+        ]
+      }
+    },
     "query": {
       "type": "object",
       "properties": {
@@ -137,45 +161,60 @@
             },
             "langfusePrompt": {
               "type": "string"
-            },
-            "series": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "query": {
-                    "$ref": "#/$defs/query"
-                  }
-                },
-                "required": ["query"]
-              }
-            },
-            "columnDefs": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "headerName": {
-                    "type": "string"
-                  },
-                  "valueFormatter": {
-                    "type": "string",
-                    "description": "Expression to format the value, should return a string.\nSee https://www.ag-grid.com/archive/31.0.2/react-data-grid/column-properties/#reference-columns-valueFormatter",
-                    "examples": [
-                      "value?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })"
-                    ]
-                  },
-                  "format": {
-                    "$ref": "#/$defs/formatProperties"
-                  }
-                },
-                "required": [
-                  "headerName"
-                ]
-              }
             }
           },
-          "required": ["langfusePrompt", "series", "columnDefs"]
+          "required": [
+            "langfusePrompt"
+          ]
+        },
+        {
+          "$oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "series": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "query": {
+                        "$ref": "#/$defs/query"
+                      }
+                    },
+                    "required": ["query"]
+                  }
+                },
+                "columnDefs": {
+                  "$ref": "#/$defs/columnDefs"
+                }
+              },
+              "required": ["series", "columnDefs"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "series": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string"
+                      },
+                      "query": {
+                        "$ref": "#/$defs/query"
+                      },
+                      "columnDefs": {
+                        "$ref": "#/$defs/columnDefs"
+                      }
+                    },
+                    "required": ["title", "query", "columnDefs"]
+                  }
+                }
+              },
+              "required": ["series"]
+            }
+          ]
         }
       ]
     },
